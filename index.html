@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script type="text/javascript" src="phaser.min.js"></script>
+		<style>
+			canvas {
+				margin: 0 auto;
+				
+			}
+		</style>
+	</head>
+	<body>
+		<script>
+			var game = new Phaser.Game(1000, 600, Phaser.AUTO, '', {preload: preload, create: create, update: update});
+						
+			//player paddles
+			var player1;
+			var player2;
+			
+			//ball properties
+			var ball;
+			var ball_lauched = false;
+			var ball_velocity = 400;
+			
+			//scores
+			var player1Score;
+			var player1ScoreCounter;
+			var player2Score;
+			var player2ScoreCounter;
+			
+			//var to keep track of who scored last, the ball will be played to the person who was scored against on reset
+			var scorer;
+			var scoreText;
+			var reset;
+			
+			function preload() {
+				game.load.image('paddleSprite', 'assets/paddle.png');
+				game.load.image('ballSprite', 'assets/ball.png');
+			}
+			
+			function create() {
+			//keyboard contorols 
+				upKey = game.input.keyboard.addKey(Phaser.Keyboard.UP);
+				downKey = game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
+				wKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
+				sKey = game.input.keyboard.addKey(Phaser.Keyboard.S);
+				
+				//player paddles
+				player1 = createPaddle(25, game.world.centerY)
+				player2 = createPaddle(game.world.width - 25, game.world.centerY)
+				player1.scale.setTo(.5);
+				player2.scale.setTo(.5);
+				
+				//game ball 
+				ball = createBall (game.world.width/2, game.world.centerY);
+				
+				//scores
+				player1ScoreCounter = 0;
+				player2ScoreCounter = 0;
+				player1Score = game.add.text( 50, 10, 'Player One: 0', {font: '24px Arial', fill: '#fff'});
+				player2Score = game.add.text( 950, 10, 'Player Two: 0', {font: '24px Arial', fill: '#fff'});
+				player2Score.anchor.setTo(1, 0)
+				
+				reset = false;
+			}
+			
+			function update() {
+				
+				game.physics.arcade.collide(ball, player1);
+				game.physics.arcade.collide(ball, player2);
+				game.physics.arcade.checkCollision.left = false;
+				game.physics.arcade.checkCollision.right = false;
+				
+				if (upKey.isDown) {
+					player2.y -= 5;
+				}
+				else if (downKey.isDown) {
+					player2.y += 5;
+				}
+
+				if (wKey.isDown) {
+					player1.y -= 5;
+				}
+				else if (sKey.isDown) {
+					player1.y += 5;
+				}
+				
+				//checks if either player scores a point
+				outOfBounds();
+				
+				resetGame();
+
+			}
+			
+			function createPaddle(x, y) {
+				var paddle = game.add.sprite( x, y, 'paddleSprite');
+				paddle.anchor.setTo(0.5);
+				game.physics.arcade.enable(paddle);
+				paddle.body.immovable = true;
+				paddle.body.collideWorldBounds = true;
+				
+				return paddle;
+			}
+			
+			function createBall(x, y) {
+				var ball = game.add.sprite(x, y, 'ballSprite');
+				ball.anchor.setTo(0.5);
+				game.physics.arcade.enable(ball);
+				ball.body.collideWorldBounds = true;
+				ball.body.bounce.setTo(1, 1);
+				ball.body.velocity.set(350, -350)
+				
+				return ball;
+			}
+			
+			function outOfBounds() {
+				if (ball.x > game.world.width) {
+					player1ScoreCounter++;
+					player1Score.setText('Player One: ' + player1ScoreCounter);
+					ball.reset(game.world.width /2, game.world.height/2);
+					scorer = "Player 1";
+					scoreText = game.add.text(game.world.width/2, game.world.height/2 - 100, 'player one scored, click to continue', {font: '18px arial', fill: '#fff'});
+					scoreText.anchor.setTo(.5);
+					scoreText.visible = true
+					reset = true;
+				}
+				else if (ball.x <  0) {
+					player2ScoreCounter++;
+					player2Score.setText('Player Two: ' + player2ScoreCounter);
+					ball.reset(game.world.width /2, game.world.height/2);
+					scorer = "Player 2";
+					scoreText = game.add.text(game.world.width/2, game.world.height/2 - 100, 'player two scored, click to continue', {font: '18px arial', fill: '#fff'});
+					scoreText.anchor.setTo(.5);
+					scoreText.visible = true
+					reset = true;
+				}
+			}
+			
+			function resetGame(reset)  {
+				//if mouse is clicked
+				if (game.input.activePointer.isDown) {
+					if (scorer) {
+						scoreText.visible = false;
+						if (scorer == "Player 1") {	
+							ball.body.velocity.set(350, -350);
+							scorer = "";
+						}
+						else {
+							ball.body.velocity.set(-350, -350);
+							scorer = "";
+						}
+					}
+					else {
+						console.log(scorer);
+					}
+				}
+			}
+		</script>
+	</body>
+</html>
